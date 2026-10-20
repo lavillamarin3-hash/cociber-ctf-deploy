@@ -1,0 +1,10 @@
+# Ejemplo de reglas locales para un perfil AppArmor que YA vincule al
+# ejecutable de Redis usado por el servicio. No es un perfil autónomo.
+# Detectar primero con aa-status y systemctl show; no desactivar AppArmor.
+/etc/cociber-redis/ r,
+/etc/cociber-redis/redis.conf r,
+/etc/cociber-redis/users.acl r,
+/mnt/db_data/redis/ rw,
+/mnt/db_data/redis/** rwk,
+/run/cociber-redis/ rw,
+/run/cociber-redis/** rwk,

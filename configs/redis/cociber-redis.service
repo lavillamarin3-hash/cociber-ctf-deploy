@@ -1,0 +1,42 @@
+[Unit]
+Description=Redis 7 nativo para Cociber CTF
+Documentation=https://redis.io/docs/latest/operate/oss_and_stack/management/
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/mnt/db_data
+ConditionPathIsMountPoint=/mnt/db_data
+ConditionPathIsDirectory=/mnt/db_data/redis
+
+[Service]
+Type=simple
+User=redis
+Group=redis
+ExecStart=/opt/cociber-redis/current/bin/redis-server /etc/cociber-redis/redis.conf
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=180
+KillSignal=SIGTERM
+UMask=0077
+LimitNOFILE=65535
+TasksMax=128
+RuntimeDirectory=cociber-redis
+RuntimeDirectoryMode=0750
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/mnt/db_data/redis /run/cociber-redis
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=yes
+StandardOutput=journal
+StandardError=journal
+# Sin MemoryMax=8G: el proceso y los hijos de persistencia requieren margen.
+# Véase memory-guardrail.example.conf antes de añadir límites cgroup.
+
+[Install]
+WantedBy=multi-user.target

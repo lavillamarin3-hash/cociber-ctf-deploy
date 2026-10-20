@@ -1,0 +1,5 @@
+# Tarball oficial, verificado con redis/redis-hashes.
+# https://github.com/redis/redis-hashes/blob/master/README
+# https://github.com/redis/redis/releases/tag/7.4.11
+REDIS_VERSION=7.4.11
+REDIS_SHA256=3c266ece0abd54ed3b1c912c6eb86b7508cf382cb690ee6649d3843f018f6357

@@ -1,0 +1,25 @@
+# COCIBER_POSTGRESQL_16_MANAGED_V1
+# El script sustituye @APP_IP@ por 10.10.10.13, validado como IPv4 del /24.
+# El orden importa: nunca anteponer un host all all trust/permit más amplio.
+
+# Administración local del sistema: no requiere contraseña ni red.
+local   all                  postgres                      peer
+local   replication          postgres                      peer
+
+# Administración SQL explícita y runtime local mediante SCRAM.
+local   all                  cociberctf                    scram-sha-256
+local   cociber_ctf          cociber_app                   scram-sha-256
+local   all                  all                           reject
+
+# TCP local cifrado; no se autoriza al usuario SQL postgres por TCP.
+hostssl all                  cociberctf    127.0.0.1/32      scram-sha-256
+hostssl all                  cociberctf    ::1/128           scram-sha-256
+hostssl cociber_ctf          cociber_app   127.0.0.1/32      scram-sha-256
+hostssl cociber_ctf          cociber_app   ::1/128           scram-sha-256
+
+# Aplicación: solo su IP exacta, base y rol de ejecución; no todo el /24.
+hostssl cociber_ctf          cociber_app   @APP_IP@/32       scram-sha-256
+
+# El resto de conexiones, incluyendo cualquier TCP sin TLS, se rechaza.
+host    all                  all           0.0.0.0/0         reject
+host    all                  all           ::/0              reject

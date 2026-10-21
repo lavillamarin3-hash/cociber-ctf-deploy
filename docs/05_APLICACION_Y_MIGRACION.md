@@ -110,10 +110,15 @@ una ruta privada del servidor nuevo, verifica su SHA-256 y conserva el origen.
 
 ### Restaurar en PostgreSQL nativo
 
-Primero crea únicamente el administrador y la base mediante `00_roles.sql`,
-con el archivo privado cargado en una sesión root como explica la guía privada.
-El wrapper de instalación nueva no se usa en este flujo porque también aplica
-el esquema. Comprueba que la base destino está vacía:
+Primero crea únicamente el administrador y la base vacía con este modo del
+wrapper, que lee el archivo privado y **no ejecuta `01_schema.sql`**:
+
+```bash
+sudo bash scripts/bootstrap-database.sh --roles-only
+sudo bash scripts/bootstrap-database.sh --roles-only --apply
+```
+
+No utilices el modo de instalación nueva en esta ruta. Comprueba que el destino está vacío:
 
 ```bash
 sudo -u postgres psql -X -d cociber_ctf -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';"
@@ -130,8 +135,15 @@ sudo -u postgres pg_restore \
 
 La ruta anterior es un parámetro: reemplázala por el destino privado real del
 respaldo. No uses `--clean` ni borres una base que contenga datos. Después de la
-restauración, `02_runtime.sql` concede acceso a la cuenta de ejecución si aún
-no existe; si ya existe, revisa sus permisos en lugar de cambiar su contraseña.
+restauración, concede acceso a la cuenta de ejecución si aún no existe:
+
+```bash
+sudo bash scripts/bootstrap-database.sh --runtime-only
+sudo bash scripts/bootstrap-database.sh --runtime-only --apply
+```
+
+Este modo ejecuta solo `02_runtime.sql`; no vuelve a crear tablas. Si el rol
+ya existe, revisa sus permisos en lugar de cambiar su contraseña.
 
 Compara usuarios, retos publicados, completados y suma de puntos con el origen.
 No basta con que la portada web abra. Mantén la aplicación antigua disponible

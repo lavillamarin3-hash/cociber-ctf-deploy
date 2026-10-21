@@ -12,10 +12,12 @@ BEGIN;
 SET LOCAL log_statement = 'none';
 SET LOCAL log_min_error_statement = 'panic';
 SET LOCAL password_encryption = 'scram-sha-256';
-SELECT length(:'admin_password') >= 12 AS password_valid \gset
+SELECT length(:'admin_password') >= 12
+    AND upper(btrim(:'admin_password')) !~ '^(REEMPLAZAR|GENERAR|CHANGE_ME|CHANGEME|REPLACE_ME|YOUR_)'
+    AS password_valid \gset
 \if :password_valid
 \else
-    \echo 'PG_ADMIN_PASSWORD debe contener al menos 12 caracteres.'
+    \echo 'PG_ADMIN_PASSWORD debe ser privada, sin marcador de plantilla y con al menos 12 caracteres.'
     \quit 1
 \endif
 

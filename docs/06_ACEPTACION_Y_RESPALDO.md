@@ -93,7 +93,7 @@ incompleta no sirve como recuperación.
 
 Antes de declarar terminado el despliegue real, reinicia el servidor en una
 ventana aprobada y repite las pruebas de montaje, servicios, autenticación y
-aplicación. El bind de datos debe estar disponible antes de iniciar los motores.
+aplicación. El montaje de datos debe estar disponible antes de iniciar los motores.
 Las pruebas locales de SQL y ACL de esta entrega no sustituyen esta prueba de
 arranque en la VM real.
 

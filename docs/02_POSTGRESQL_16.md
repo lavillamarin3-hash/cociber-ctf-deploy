@@ -1,14 +1,14 @@
-# PostgreSQL 16 nativo en LAB-DB-POSTGRES
+# PostgreSQL 16 nativo en lab-db-ctf
 
 Este procedimiento prepara PostgreSQL **16**, no la versión que instale el metapaquete genérico de Ubuntu. No utiliza Docker. La instalación de Redis se describe por separado; ambos servicios comparten la misma VM y su presupuesto de memoria.
 
 | Elemento | Valor |
 |---|---|
 | Sistema | Ubuntu Server 26.04 LTS, `resolute` |
-| VM de datos | `LAB-DB-POSTGRES`, `10.10.10.14/24` |
+| VM de datos | `lab-db-ctf`, `10.10.10.14/24` |
 | VM de aplicación autorizada | `10.10.10.13/32` |
 | Recursos | 4 vCPU, 32 GB RAM |
-| Disco del sistema | 50 GB; paquetes, configuración y logs del sistema |
+| Disco del sistema | 50G virtuales; raíz LVM actualmente de 24G, para paquetes y logs |
 | Disco de datos | 2 TB montados en `/mnt/db_data` |
 | Datos PostgreSQL | `/mnt/db_data/postgres` |
 | Cluster / servicio | `16/main` / `postgresql@16-main.service` |
@@ -19,6 +19,10 @@ Este procedimiento prepara PostgreSQL **16**, no la versión que instale el meta
 `cociberctf` es un rol de PostgreSQL, no una cuenta de acceso a la plataforma. La creación de usuarios administradores de Cociber CTF se realiza después, con el procedimiento de la aplicación.
 
 ## 1. Distinguir una instalación nueva de una migración
+
+El SO, el montaje ext4 en `/mnt/db_data` y las subcarpetas ya están preparados
+según el inventario recibido. Confirma el montaje sin repetirlo y continúa en
+la sección 2. Que `pg_lsclusters` no exista antes de instalar los paquetes es normal.
 
 Ejecuta primero comprobaciones de lectura:
 
@@ -137,7 +141,8 @@ sudo adduser postgres ssl-cert
 
 El certificado `snakeoil` permite comprobar TLS en este laboratorio privado con `sslmode=require`, pero **no acredita la identidad `10.10.10.14` para `verify-full`**. El modo inicial cifra la conexión sin verificar esa identidad. Como mejora posterior para producción, instala un certificado con `subjectAltName=IP:10.10.10.14` firmado por una CA confiable, una clave privada accesible solo por el propietario autorizado, y cambia las rutas `ssl_cert_file`/`ssl_key_file` de la plantilla. PostgreSQL documenta las condiciones de certificado y clave en [SSL del servidor](https://www.postgresql.org/docs/16/ssl-tcp.html). Esa mejora no bloquea la puesta en marcha del laboratorio.
 
-Aplica la configuración y, si se adopta el presupuesto de la sección 5, el límite cgroup:
+Aplica la configuración de acceso y disco. El límite cgroup es opcional y
+requiere añadir `--memory-guard` tras evaluar el presupuesto de la sección 5:
 
 ```bash
 sudo bash scripts/configure-postgresql.sh --apply --app-ip 10.10.10.13

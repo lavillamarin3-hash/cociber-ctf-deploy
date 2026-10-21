@@ -1,8 +1,8 @@
-# Redis 7 nativo en LAB-DB-POSTGRES
+# Redis 7 nativo en lab-db-ctf
 
 Destino: **Ubuntu Server 26.04 LTS, `resolute`, 10.10.10.14**, 4 vCPU y 32 GB de RAM compartidos con PostgreSQL. Aplicación autorizada: **10.10.10.13/32**. Redis usa TCP 6379 y `/mnt/db_data/redis`. No se utilizan contenedores.
 
-Este capítulo prepara una instalación nueva. No mueve datos de otro Redis ni cambia particiones. Ejecuta primero la guía de almacenamiento: `/mnt/db_data` debe ser un montaje real y Redis un subdirectorio de ese mismo filesystem. **150 GB es el objetivo de capacidad de Redis**, no una cuota creada por `mkdir`; una reserva exigible requiere las cuotas o volúmenes que se hayan definido en almacenamiento.
+El SO, el montaje ext4 en `/mnt/db_data` y las subcarpetas ya están creados en este servidor. Este capítulo continúa desde la instalación de Redis: comprueba el montaje, sin volver a formatear ni montar. No mueve datos de otro Redis ni cambia particiones. **150 GB es el objetivo de capacidad de Redis**, no una cuota creada por `mkdir`; una reserva exigible requiere las cuotas o volúmenes que se hayan definido en almacenamiento.
 
 ## 1. Comprobar Ubuntu y la disponibilidad real de Redis 7
 
@@ -214,4 +214,4 @@ Para restaurar datos, conserva los actuales con otro nombre en el mismo montaje,
 - PostgreSQL y Redis mantienen margen de RAM y disco durante persistencia.
 - Se probó un respaldo y una restauración, además de las sesiones reales de Cociber CTF.
 
-Esta entrega contiene archivos y comandos revisados; la ejecución y aceptación en LAB-DB-POSTGRES se registran después de aplicar el procedimiento en esa VM.
+Esta entrega contiene archivos y comandos revisados; la ejecución y aceptación en lab-db-ctf se registran después de aplicar el procedimiento en esa VM.

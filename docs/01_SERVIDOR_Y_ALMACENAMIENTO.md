@@ -1,128 +1,94 @@
-# 1. Servidor y almacenamiento
+# 1. Almacenamiento ya preparado en lab-db-ctf
 
-Ejecuta estos pasos en **LAB-DB-POSTGRES — 10.10.10.14/24**, Ubuntu Server
-26.04, 4 vCPU y 32 GB RAM. El servidor de aplicación es **10.10.10.13/24**.
-Usa una consola administrativa y conserva otra sesión SSH abierta.
+Actualizado con la salida del operador. El SO, el filesystem y las carpetas ya
+están preparados. Continúa con la instalación de PostgreSQL 16 y Redis 7;
+no repitas el formateo, el montaje ni la creación de subcarpetas.
 
-## Inventario antes de cambiar rutas
+| Recurso observado | Estado |
+|---|---|
+| Hostname real | `lab-db-ctf` |
+| Sistema | Ubuntu 26.04 LTS, resolute, x86-64 |
+| Interfaz / IP | `ens3`, `10.10.10.14/24` |
+| CPU / RAM | 4 vCPU, aproximadamente 30 GiB visibles |
+| SO | Disco de 50G; **raíz LVM de 24G**, con aproximadamente 15G libres |
+| Datos | `/dev/sdb`, 2T, ext4, montado en `/mnt/db_data` |
+| UUID de datos | `a5a1988e-6d34-4c4f-ab0a-a97d40cf6e39` |
+| Carpetas creadas | `/mnt/db_data/postgres`, `/mnt/db_data/redis` |
+| fstab actual | `/dev/sdb /mnt/db_data ext4 defaults,noatime 0 2` |
+| PostgreSQL | `pg_lsclusters` aún no instalado |
+| API autorizada | `10.10.10.13/32` |
 
-```bash
-hostnamectl
-cat /etc/os-release
-ip -4 address
-nproc
-free -h
-lsblk -o NAME,SIZE,FSTYPE,UUID,MOUNTPOINTS
-findmnt -T /var/lib/postgresql
-findmnt -T /mnt/db_data
-df -hT
-sudo pg_lsclusters
-```
+## Comprobación de lectura
 
-Confirma que el disco de datos es el de **2 TB**, no el del SO de 50 GB.
-El sistema puede mostrar aproximadamente **1.82 TiB** para 2 TB decimales;
-GB y GiB no son equivalentes. No uses un nombre como `/dev/sdb` sin comprobar
-su UUID. Estas instrucciones no contienen `mkfs`, `wipefs` ni reparticionado.
-
-Si el hostname aún no coincide:
+En **lab-db-ctf**:
 
 ```bash
-sudo hostnamectl set-hostname LAB-DB-POSTGRES
+findmnt --mountpoint /mnt/db_data -o SOURCE,TARGET,FSTYPE,OPTIONS
+sudo blkid /dev/sdb
+df -hT / /mnt/db_data
+sudo ls -ld /mnt/db_data /mnt/db_data/postgres /mnt/db_data/redis
+sudo find /mnt/db_data/postgres /mnt/db_data/redis -mindepth 1 -maxdepth 1 -print
 ```
 
-No cambies la dirección IP a ciegas desde la misma conexión SSH. La dirección
-10.10.10.14 debe estar configurada y responder antes de instalar los servicios.
+Confirma el UUID y el montaje del disco de datos. Las subcarpetas deben estar
+vacías para inicializar motores nuevos. Si contienen datos, utiliza migración
+y respaldo. Si el montaje no aparece, detente antes de instalar: una carpeta
+sin ese disco podría llenar la raíz de 24G.
 
-## Si el disco ya está montado en /var/lib/postgresql
+No ejecutes `mkfs` de nuevo. No necesitas un bind desde
+`/var/lib/postgresql`, otro montaje ni cambiar el hostname a LAB-DB-POSTGRES;
+ese era el nombre previsto, pero el nombre real es `lab-db-ctf`.
 
-Primero identifica si existe un clúster con datos. Si existe, sigue la guía de
-respaldo y abre una ventana de mantenimiento: detener PostgreSQL corta las
-conexiones de la aplicación. No muevas un clúster mientras siga en ejecución.
+## Mejorar la persistencia del montaje
 
-La opción menos invasiva para el punto de montaje ya instalado es un **bind
-mount**: se conserva el montaje original y se accede al mismo disco también
-desde una ruta neutral. No se duplica su capacidad ni se copian los datos.
-
-```bash
-mountpoint /var/lib/postgresql
-sudo install -d -m 0755 /mnt/db_data
-find /mnt/db_data -mindepth 1 -maxdepth 1 -print
-```
-
-Continúa solo si `/var/lib/postgresql` es realmente el disco de datos y
-`/mnt/db_data` está vacío y sin montar. Conserva una copia de fstab:
+La línea actual funciona. Es preferible identificar el mismo filesystem por
+UUID para evitar cambios en el orden de discos. Comprueba primero que `blkid`
+devuelve el UUID del inventario; después respalda fstab:
 
 ```bash
 sudo cp -a /etc/fstab "/etc/fstab.cociber.$(date -u +%Y%m%dT%H%M%SZ).bak"
 sudoedit /etc/fstab
 ```
 
-Añade **una sola vez**, manteniendo la línea original del disco de datos:
+**Sustituye la línea existente** de `/dev/sdb /mnt/db_data` por la siguiente;
+no añadas una segunda línea para el mismo destino:
 
 ```fstab
-/var/lib/postgresql /mnt/db_data none bind,x-systemd.requires-mounts-for=/var/lib/postgresql 0 0
+UUID=a5a1988e-6d34-4c4f-ab0a-a97d40cf6e39 /mnt/db_data ext4 defaults,noatime 0 2
 ```
 
 ```bash
 sudo findmnt --verify --verbose
-sudo mount /mnt/db_data
-findmnt /mnt/db_data
-df -hT /mnt/db_data /var/lib/postgresql
-sudo chmod 0755 /mnt/db_data
+sudo systemctl daemon-reload
+findmnt --mountpoint /mnt/db_data
 ```
 
-El bind anterior permanece deliberadamente después del despliegue. No borres
-el directorio original: contiene el mismo disco. Las guías de los motores
-utilizan `/mnt/db_data/postgres` y `/mnt/db_data/redis` como rutas canónicas.
+No hace falta desmontar ni formatear. Corrige cualquier error antes de un
+reinicio. Los servicios dependen de este montaje y no usan `nofail`.
 
-### Alternativa: cambiar el montaje real a /mnt/db_data
+## Propietarios después de instalar los usuarios de servicio
 
-Solo en una instalación vacía o durante una migración planificada, puede
-modificarse la línea original de `/etc/fstab`, conservando **su UUID, tipo de
-filesystem y opciones** y sustituyendo únicamente el destino por
-`/mnt/db_data`. Requiere detener ambos motores, desmontar sin `-f` ni `-l`,
-verificar que ningún proceso utiliza el disco y montar el destino nuevo.
-No combines esta alternativa con el bind anterior. Evita hacerlo por SSH sin
-una consola de recuperación y un respaldo externo probado.
+Las carpetas creadas con `mkdir` pueden pertenecer aún a root. Los pasos de
+PostgreSQL instalarán `postgres`; el instalador Redis creará `redis`.
+Cada procedimiento asigna solo su subcarpeta:
 
-## Crear las carpetas después de instalar los usuarios de los paquetes
+- PostgreSQL: `postgres:postgres`, modo `0700`.
+- Redis: `redis:redis`, modo `0750`.
+- Padre `/mnt/db_data`: modo `0755` para permitir el recorrido.
 
-PostgreSQL y Redis deben disponer ya de sus usuarios de sistema. La guía de
-Redis 7 crea el usuario `redis` cuando instala desde fuentes.
+No asignes recursivamente todo el disco a un motor ni crees cuentas manuales
+antes de seguir sus instaladores.
 
-```bash
-mountpoint /mnt/db_data
-getent passwd postgres
-getent passwd redis
-sudo install -d -o postgres -g postgres -m 0700 /mnt/db_data/postgres
-sudo install -d -o redis -g redis -m 0700 /mnt/db_data/redis
-sudo stat -c '%U:%G %a %n' /mnt/db_data/postgres /mnt/db_data/redis
-df -h /mnt/db_data
-```
+## Capacidad y arranque
 
-`install -d` crea directorios; no traslada el contenido de un clúster existente.
-La migración de datos se explica en las guías de cada motor. Los archivos de
-PostgreSQL deben seguir siendo propiedad de `postgres` y los de Redis, de
-`redis`; no asignes todo el disco a un solo usuario recursivamente.
+1850 GB para PostgreSQL y 150 GB para Redis son objetivos, no cuotas de estas
+carpetas. Conserva margen para ext4, WAL, temporales y reescrituras AOF. La
+capacidad disponible real es la que indique `df`; no se cambia el particionado.
 
-## 1850 GB para PostgreSQL y 150 GB para Redis
+Guarda respaldos completos fuera del disco de datos y de la raíz de 24G.
+Ambos servicios incluyen dependencias de montaje para evitar escribir en el
+SO si falta el volumen. El reinicio se valida en la aceptación.
 
-Dos carpetas no crean límites de espacio. En un filesystem compartido estos
-valores son **objetivos de capacidad**, no reservas. Además 1850 + 150 =
-2000 GB y no deja espacio para metadatos ni mantenimiento: no se debe llenar
-el disco hasta esa suma. Vigila el volumen total y activa alertas antes del
-80 % y 90 % de ocupación; conserva margen adicional para WAL y reescrituras.
-
-Si necesitas cuotas estrictas, diseña antes volúmenes LVM separados o cuotas
-de proyecto del filesystem concreto. Eso depende de cómo se particionó el
-disco; no es seguro generar comandos de reducción o formateo sin el inventario.
-Los 150 GB de disco de Redis guardan AOF/RDB; no aumentan su capacidad en RAM.
-
-## Orden al arrancar y al recuperar
-
-Ambos servicios deben incluir `RequiresMountsFor=/mnt/db_data` para fallar si
-el disco no está disponible, en lugar de escribir silenciosamente en el SO.
-Después de cualquier cambio de fstab, verifica el montaje y los servicios
-antes de reiniciar. Guarda respaldos fuera de este disco y fuera del SO.
-
+Continúa con [el orden de instalación desde el estado actual](07_CONTINUAR_INSTALACION.md)
+y [PostgreSQL 16](02_POSTGRESQL_16.md).
 Referencia: [montajes y dependencias de systemd](https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html).

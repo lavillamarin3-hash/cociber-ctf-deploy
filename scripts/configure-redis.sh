@@ -41,20 +41,24 @@ secrets_mode="$(stat -c %a "$SECRETS_FILE")"
 [[ "$(stat -c %u /etc/cociber-ctf)" == 0 ]] || fail 'El directorio de secretos debe pertenecer a root.'
 secrets_dir_mode="$(stat -c %a /etc/cociber-ctf)"
 (( (8#$secrets_dir_mode & 022) == 0 )) || fail 'El directorio de secretos no puede permitir escritura a grupo/otros.'
-# Validar como datos antes de cargar la configuración privada de confianza.
-# Rechaza también los marcadores públicos de .env.example, sin mostrarlos.
-python3 - "$ROOT_DIR/tools" "$SECRETS_FILE" <<'PY'
+# Leer solo los dos valores Redis como datos. No ejecutar source ni eval.
+# El separador NUL conserva literalmente símbolos, espacios y comillas.
+mapfile -d '' -t REDIS_SECRETS < <(python3 - "$ROOT_DIR/tools" "$SECRETS_FILE" <<'PY'
 import sys
 sys.path.insert(0, sys.argv[1])
 from private_env import read_private_env
 try:
-    read_private_env(sys.argv[2])
+    values = read_private_env(sys.argv[2])
 except ValueError as error:
     sys.exit(str(error))
+for key in ('REDIS_ADMIN_PASSWORD', 'REDIS_APP_PASSWORD'):
+    sys.stdout.buffer.write(values.get(key, '').encode('utf-8') + b'\0')
 PY
-# Archivo Bash de confianza, creado por root; nunca se muestra su contenido.
-# shellcheck disable=SC1091
-source "$SECRETS_FILE"
+)
+[[ ${#REDIS_SECRETS[@]} -eq 2 ]] || fail 'No se pudo leer el archivo privado; no se modificó el sistema.'
+REDIS_ADMIN_PASSWORD="${REDIS_SECRETS[0]}"
+REDIS_APP_PASSWORD="${REDIS_SECRETS[1]}"
+unset REDIS_SECRETS
 [[ -n "${REDIS_ADMIN_PASSWORD:-}" ]] || fail 'Falta REDIS_ADMIN_PASSWORD en el archivo de secretos.'
 
 printf 'SO correcto; montaje e IP correctos; secreto presente sin mostrarlo.\n'

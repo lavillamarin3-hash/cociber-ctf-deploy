@@ -1,15 +1,21 @@
 # Despliegue nativo de Cociber CTF
 
-Guías, SQL y configuración para **LAB-DB-POSTGRES**, Ubuntu Server 26.04,
+Guías, SQL y configuración para **lab-db-ctf** (nombre previsto LAB-DB-POSTGRES), Ubuntu Server 26.04,
 **10.10.10.14/24**, 4 vCPU, 32 GB RAM, disco del SO de 50 GB y disco de datos
 de 2 TB. PostgreSQL **16** y Redis **7** se ejecutan como servicios nativos.
 La aplicación está en **10.10.10.13/24**; los permisos de red usan su IP `/32`.
+El inventario real muestra una raíz LVM de **24G** dentro del disco de SO de
+50G y el disco de datos ya montado en `/mnt/db_data`.
 
 Este repositorio contiene el despliegue. El código de la plataforma permanece
 en [ctf-platform](https://github.com/lavillamarin3-hash/ctf-platform) y la web del
 taller en [operacion-condor](https://github.com/lavillamarin3-hash/operacion-condor).
 
 ## Orden de trabajo
+
+**El SO y el disco ya están preparados:** comienza por
+[Continuar la instalación desde el estado real](docs/07_CONTINUAR_INSTALACION.md).
+El disco ya está montado en `/mnt/db_data`; no se formatea ni se vuelve a montar.
 
 0. [Preparar las credenciales privadas](docs/00_CREDENCIALES_Y_PREPARACION.md).
 1. [Preparar almacenamiento y verificar recursos](docs/01_SERVIDOR_Y_ALMACENAMIENTO.md).
@@ -18,6 +24,9 @@ taller en [operacion-condor](https://github.com/lavillamarin3-hash/operacion-con
 4. [Crear el esquema de la plataforma](docs/04_ESQUEMA_BASE_DATOS.md).
 5. [Conectar la aplicación y migrar datos existentes](docs/05_APLICACION_Y_MIGRACION.md).
 6. [Comprobaciones de aceptación y respaldo](docs/06_ACEPTACION_Y_RESPALDO.md).
+7. [Víctima web LAB-SRVWEB y guía de Operación Cóndor](docs/08_LAB_SRVWEB_CONDOR.md).
+
+Consulta las [pruebas de esta entrega y su alcance](VALIDACION.md).
 
 Los scripts de configuración ofrecen comprobación previa y requieren una
 acción explícita para aplicar cambios. No formatean discos. El SQL inicial

@@ -12,10 +12,12 @@ BEGIN;
 SET LOCAL log_statement = 'none';
 SET LOCAL log_min_error_statement = 'panic';
 SET LOCAL password_encryption = 'scram-sha-256';
-SELECT length(:'app_password') >= 20 AS password_valid \gset
+SELECT length(:'app_password') >= 20
+    AND upper(btrim(:'app_password')) !~ '^(REEMPLAZAR|GENERAR|CHANGE_ME|CHANGEME|REPLACE_ME|YOUR_)'
+    AS password_valid \gset
 \if :password_valid
 \else
-    \echo 'PG_APP_PASSWORD debe contener al menos 20 caracteres.'
+    \echo 'PG_APP_PASSWORD debe ser privada, sin marcador de plantilla y con al menos 20 caracteres.'
     \quit 1
 \endif
 

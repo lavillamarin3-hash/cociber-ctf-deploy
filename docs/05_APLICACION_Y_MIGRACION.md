@@ -2,6 +2,10 @@
 
 ## Direcciones y cuentas
 
+El servidor de bases real es **lab-db-ctf**. Ubuntu y su volumen de datos en
+`/mnt/db_data` ya están preparados; este capítulo conecta la API después de
+instalar los motores y, si corresponde, restaurar los datos actuales.
+
 | Componente | Dirección | Puerto |
 |---|---|---|
 | Aplicación Cociber CTF | 10.10.10.13/24 | El que se configure en su proxy web |

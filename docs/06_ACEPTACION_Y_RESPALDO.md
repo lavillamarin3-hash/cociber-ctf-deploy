@@ -2,11 +2,11 @@
 
 ## Verificar el servidor después de instalar
 
-En **10.10.10.14**:
+En **lab-db-ctf, 10.10.10.14**:
 
 ```bash
 findmnt /mnt/db_data
-df -hT /mnt/db_data
+df -hT / /mnt/db_data
 sudo pg_lsclusters
 sudo systemctl status postgresql@16-main --no-pager
 sudo systemctl status cociber-redis --no-pager
@@ -58,6 +58,10 @@ reinicio del servicio; no evita por sí solo una interrupción.
 El espacio de 1850/150 GB requiere vigilancia sobre el disco compartido. Las
 carpetas no son cuotas. Los respaldos deben escribirse en un almacenamiento
 **externo** distinto del disco de datos y del SO de 50 GB.
+
+El disco del SO es de 50G, pero la raíz LVM actualmente tiene **24G**, con
+aproximadamente 15G libres en el inventario recibido. Comprueba `/` además
+del volumen de datos y no guardes allí los respaldos completos.
 
 ## Respaldo PostgreSQL
 

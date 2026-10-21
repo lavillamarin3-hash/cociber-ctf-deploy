@@ -1,4 +1,9 @@
-# 0. Preparación y credenciales
+# 0. Credenciales para continuar la instalación
+
+Ubuntu 26.04 ya está instalado en **lab-db-ctf**, con el disco ext4 montado en
+`/mnt/db_data` y las carpetas de los motores creadas. Continúa desde las
+credenciales y la instalación de las bases; no repitas la preparación del SO
+ni el formateo.
 
 Todo el procedimiento nativo de bases se ejecuta en **10.10.10.14**, no en el
 servidor de aplicación **10.10.10.13**. Se necesita acceso `sudo`. Los motores
@@ -9,6 +14,10 @@ nombre.
 Clona este repositorio en una ruta de administración legible por `postgres`,
 por ejemplo `/opt/cociber-ctf-deploy`. No lo clones dentro de `/root` si vas a
 ejecutar archivos SQL como `postgres`.
+
+El bloque siguiente es para la **primera descarga**. Si `/opt/cociber-ctf-deploy`
+ya existe, actualiza esa copia según [el README](../README.md) y omite
+`git clone`. Conserva el archivo privado existente.
 
 ```bash
 sudo apt update

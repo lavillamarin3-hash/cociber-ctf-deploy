@@ -103,21 +103,34 @@ sudo ss -ltnp 'sport = :6379'
 sudo journalctl -u cociber-redis -n 40 --no-pager
 ```
 
-Para comprobar autenticación desde la misma VM, abre una shell root y ejecuta el siguiente bloque. La contraseña viaja en `REDISCLI_AUTH`, no mediante `-a`, argumentos o una URI. No actives `set -x`. [Autenticación de `redis-cli`](https://redis.io/docs/latest/develop/tools/cli/).
+Para comprobar autenticación desde la misma VM, ejecuta el siguiente bloque.
+Lee el archivo privado como datos con el mismo lector del instalador, sin
+`source` ni `eval`. La contraseña viaja en `REDISCLI_AUTH`, no mediante `-a`,
+argumentos o una URI. [Autenticación de `redis-cli`](https://redis.io/docs/latest/develop/tools/cli/).
 
 ```bash
-sudo -i
-set +x
-. /etc/cociber-ctf/deploy-secrets.env
-export REDISCLI_AUTH="$REDIS_ADMIN_PASSWORD"
-REDIS_CLI=/opt/cociber-redis/current/bin/redis-cli
-"$REDIS_CLI" --user cociberctf -h 127.0.0.1 PING
-"$REDIS_CLI" --user cociberctf -h 10.10.10.14 ACL WHOAMI
-"$REDIS_CLI" --user cociberctf -h 127.0.0.1 INFO server | grep '^redis_version:'
-"$REDIS_CLI" --user cociberctf -h 127.0.0.1 CONFIG GET maxmemory maxmemory-policy dir appendonly
-env -u REDISCLI_AUTH "$REDIS_CLI" -h 127.0.0.1 PING
-unset REDISCLI_AUTH REDIS_ADMIN_PASSWORD
-exit
+sudo python3 - <<'PY'
+import os
+import subprocess
+import sys
+sys.path.insert(0, '/opt/cociber-ctf-deploy/tools')
+from private_env import read_private_env
+
+values = read_private_env('/etc/cociber-ctf/deploy-secrets.env')
+cli = '/opt/cociber-redis/current/bin/redis-cli'
+base_env = {'PATH': os.defpath, 'LANG': 'C.UTF-8'}
+authenticated = {**base_env, 'REDISCLI_AUTH': values['REDIS_ADMIN_PASSWORD']}
+checks = [
+    ('127.0.0.1', ['PING']),
+    ('10.10.10.14', ['ACL', 'WHOAMI']),
+    ('127.0.0.1', ['INFO', 'server']),
+    ('127.0.0.1', ['CONFIG', 'GET', 'maxmemory', 'maxmemory-policy', 'dir', 'appendonly']),
+]
+for host, command in checks:
+    subprocess.run([cli, '--user', 'cociberctf', '-h', host, *command],
+                   env=authenticated, check=True)
+subprocess.run([cli, '-h', '127.0.0.1', 'PING'], env=base_env, check=True)
+PY
 ```
 
 Resultados: `PONG`, usuario `cociberctf`, versión `7.4.11`, `maxmemory` igual a `8589934592`, `noeviction`, ruta `/mnt/db_data/redis`, AOF `yes`. La última petición debe devolver **`NOAUTH Authentication required`**. No ejecutes `ACL LIST` para hacer una captura: mostraría hashes de las credenciales.

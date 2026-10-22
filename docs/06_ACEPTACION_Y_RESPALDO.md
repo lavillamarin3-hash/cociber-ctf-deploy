@@ -63,6 +63,10 @@ El disco del SO es de 50G, pero la raíz LVM actualmente tiene **24G**, con
 aproximadamente 15G libres en el inventario recibido. Comprueba `/` además
 del volumen de datos y no guardes allí los respaldos completos.
 
+## Scripts de respaldo listos para ejecutar
+
+Los scripts de este mismo proyecto permiten realizar respaldos de PostgreSQL y Redis ya instalados, sin restaurar ni modificar las tablas. **En la VM 10.10.10.14** utiliza `sudo bash scripts/respaldo_ctf_nativo.sh /RUTA_EXTERNA_DE_RESPALDOS`. Para el entorno antiguo Docker en Windows utiliza `scripts/respaldo_ctf_docker.ps1`. Lee el procedimiento completo, los requisitos de permisos y la verificación de archivos en [Respaldos PostgreSQL y Redis](09_RESPALDOS_POSTGRES_REDIS.md).
+
 ## Respaldo PostgreSQL
 
 Define `BACKUP_DIR` con una ruta externa real montada, con espacio suficiente,

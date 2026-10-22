@@ -24,6 +24,7 @@ El disco ya está montado en `/mnt/db_data`; no se formatea ni se vuelve a monta
 4. [Crear el esquema de la plataforma](docs/04_ESQUEMA_BASE_DATOS.md).
 5. [Conectar la aplicación y migrar datos existentes](docs/05_APLICACION_Y_MIGRACION.md).
 6. [Comprobaciones de aceptación y respaldo](docs/06_ACEPTACION_Y_RESPALDO.md).
+   - [Scripts de respaldo Docker y base nativa](docs/09_RESPALDOS_POSTGRES_REDIS.md).
 7. [Víctima web LAB-SRVWEB y guía de Operación Cóndor](docs/08_LAB_SRVWEB_CONDOR.md).
 
 Consulta las [pruebas de esta entrega y su alcance](VALIDACION.md).
